@@ -1,0 +1,80 @@
+---
+title: "Milestone Report"
+author: "Vicente Garcia"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduction
+
+The main goal of this report is to show the EDA performed on the three English datasets named blogs, news, and Twitter. The report is organized as follows: Section 1, we load each dataset and summarize the line counts. In section 2, we applied basic processing and created the training sets. Finally, in Section 3, shows an EDA for each training dataset.
+
+First, we load some valuable libraries for this report.
+
+```{r library}
+library(NLP)
+library(tm)
+library(stringi)
+library(SnowballC)
+library(wordcloud)
+library(RColorBrewer)
+library(ggplot2)
+```
+
+## 1. Loading the datasets
+
+As the capstone file containing all the datasets is big, we have previously downloaded and unzipped it. Therefore, we have omitted the downloading instructions in this section, using only the loading code for the three datasets with the txt extension.
+
+```{r loading, echo=TRUE}
+options(warn=-1)
+con = file("en_US.blogs.txt", "r")
+linblogs =readLines(con)
+con = file("en_US.news.txt", "r")
+linnews =readLines(con)
+con = file("en_US.twitter.txt", "r")
+lintwitter =readLines(con)
+close(con)
+```
+
+Some basic statistics on the original datasets
+```{r printstats, echo=FALSE}
+statslin <- stri_stats_general(linblogs)
+b <-data.frame(statslin)
+ggplot(data=b, aes(x=seq_along(statslin), y = statslin))+geom_bar(stat="identity")+scale_x_continuous(breaks=1:4, labels=c("No. Lines","No. Lines Non Empty", "No. Chars", "No. Chars not white space"))+xlab("English US Blogs")+ylab("No.")
+
+statslin <- stri_stats_general(linnews)
+b <-data.frame(statslin)
+ggplot(data=b, aes(x=seq_along(statslin), y = statslin))+geom_bar(stat="identity")+scale_x_continuous(breaks=1:4, labels=c("No. Lines","No. Lines Non Empty", "No. Chars", "No. Chars not white space"))+xlab("English US News") + ylab("No.")
+
+statslin <- stri_stats_general(lintwitter)
+b <-data.frame(statslin)
+ggplot(data=b, aes(x=seq_along(statslin), y = statslin))+geom_bar(stat="identity")+scale_x_continuous(breaks=1:4, labels=c("No. Lines","No. Lines Non Empty", "No. Chars", "No. Chars not white space"))+xlab("English US Twitter")+ ylab("No.")
+```
+
+## Data Splitting for out-of-sample construction and evaluation
+
+The three datasets are partitioned into a training set and a test set. This approach is called holdout, where the training set is used for building machine learning models and the test set is to evaluate using a different data. Here, we will use 60% for training and the remaining for testing.
+
+```{r holdout, echo=TRUE}
+linblogs <-sample(linblogs, length(linblogs)*0.60)
+linews <-sample(linnews, length(linnews)*0.60)
+lintwitter <-sample(lintwitter, length(lintwitter)*0.60)
+print(length(linblogs))
+print(length(linnews))
+print(length(lintwitter))
+```
+
+## Basic Processing
+We perform some preprocessing on each dataset. To do this, we convert the data as a corpus
+```{r corpus, echo=TRUE}
+doc_
+docblogs <- Corpus(VectorSource(linblogs))
+docnews <- Corpus(VectorSource(linnews))
+doctwitter <- Corpus(VectorSource(lintwitter))
+```
+
+We applied some text transformation as well as cleaning steps.
