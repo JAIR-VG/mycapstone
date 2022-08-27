@@ -20,9 +20,10 @@ library(NLP)
 library(tm)
 library(stringi)
 library(SnowballC)
+#library(RColorBrewer)
 library(wordcloud)
-library(RColorBrewer)
 library(ggplot2)
+#library(textclean)
 ```
 
 ## 1. Loading the datasets
@@ -57,24 +58,38 @@ ggplot(data=b, aes(x=seq_along(statslin), y = statslin))+geom_bar(stat="identity
 
 ## Data Splitting for out-of-sample construction and evaluation
 
-The three datasets are partitioned into a training set and a test set. This approach is called holdout, where the training set is used for building machine learning models and the test set is to evaluate using a different data. Here, we will use 60% for training and the remaining for testing.
+The three datasets are partitioned into a training set and a test set. This approach is called holdout, where the training set is used for building machine learning models and the test set is to evaluate using a different data. Here, we will use 30% for training and the remaining for testing.
 
 ```{r holdout, echo=TRUE}
-linblogs <-sample(linblogs, length(linblogs)*0.60)
-linews <-sample(linnews, length(linnews)*0.60)
-lintwitter <-sample(lintwitter, length(lintwitter)*0.60)
+linblogs <-sample(linblogs, length(linblogs)*0.30)
+linews <-sample(linnews, length(linnews)*0.30)
+lintwitter <-sample(lintwitter, length(lintwitter)*0.30)
 print(length(linblogs))
 print(length(linnews))
 print(length(lintwitter))
 ```
 
 ## Basic Processing
-We perform some preprocessing on each dataset. To do this, we convert the data as a corpus
+We perform some preprocessing on each dataset. Here, we use two kinds of processing instructions.
 ```{r corpus, echo=TRUE}
-doc_
-docblogs <- Corpus(VectorSource(linblogs))
-docnews <- Corpus(VectorSource(linnews))
-doctwitter <- Corpus(VectorSource(lintwitter))
+lintwitter <- tolower(lintwitter)
+lintwitter <- gsub("@\\w+", "", lintwitter)
+lintwitter <- gsub("https?://.+", "", lintwitter)
+lintwitter <- gsub("\\d+\\w*\\d*", "", lintwitter)
+lintwitter <- gsub("#\\w+", "", lintwitter)
+lintwitter <- gsub("[^\x01-\x7F]", "", lintwitter)
+lintwitter <- gsub("[[:punct:]]", " ", lintwitter)
+
+lintwitter <- gsub("\n", " ", lintwitter)
+lintwitter <- gsub("^\\s+", "", lintwitter)
+lintwitter <- gsub("\\s+$", "", lintwitter)
+lintwitter <- gsub("[ |\t]+", " ", lintwitter)
+
+lintwitter <- Corpus(VectorSource(lintwitter))
+lintwitter <- tm_map(lintwitter,removePunctuation)
+lintwitter <- tm_map(lintwitter,removeWords, stopwords("english"))
+lintwitter <- tm_map(lintwitter,stripWhitespace)
+
 ```
 
 We applied some text transformation as well as cleaning steps.
