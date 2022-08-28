@@ -19,7 +19,7 @@ First, we load some valuable libraries for this report.
 library(NLP)
 library(tm)
 library(stringi)
-library(SnowballC)
+#library(SnowballC)
 #library(RColorBrewer)
 library(wordcloud)
 library(ggplot2)
@@ -58,11 +58,11 @@ ggplot(data=b, aes(x=seq_along(statslin), y = statslin))+geom_bar(stat="identity
 
 ## Data Splitting for out-of-sample construction and evaluation
 
-The three datasets are partitioned into a training set and a test set. This approach is called holdout, where the training set is used for building machine learning models and the test set is to evaluate using a different data. Here, we will use 30% for training and the remaining for testing.
+The three datasets are partitioned into a training set and a test set. This approach is called holdout, where the training set is used for building machine learning models and the test set is to evaluate using a different data. Here, we will use 50% for training and the remaining for testing.
 
 ```{r holdout, echo=TRUE}
 linblogs <-sample(linblogs, length(linblogs)*0.30)
-linews <-sample(linnews, length(linnews)*0.30)
+linnews <-sample(linnews, length(linnews)*0.30)
 lintwitter <-sample(lintwitter, length(lintwitter)*0.30)
 print(length(linblogs))
 print(length(linnews))
@@ -70,7 +70,7 @@ print(length(lintwitter))
 ```
 
 ## Basic Processing
-We perform some preprocessing on each dataset. Here, we use two kinds of processing instructions.
+We perform some preprocessing on each dataset for removing hashs, url, puntuation, stopwords and spaces.
 ```{r corpus, echo=TRUE}
 lintwitter <- tolower(lintwitter)
 lintwitter <- gsub("@\\w+", "", lintwitter)
@@ -92,4 +92,93 @@ lintwitter <- tm_map(lintwitter,stripWhitespace)
 
 ```
 
-We applied some text transformation as well as cleaning steps.
+The previous preprocessing steps also are applied to US-Blogs and US-News training datasets. However, for the sake of clarity, we hide the code.
+
+```{r corpus2, echo=FALSE}
+linblogs <- tolower(linblogs)
+linblogs <- gsub("@\\w+", "", linblogs)
+linblogs <- gsub("https?://.+", "", linblogs)
+linblogs <- gsub("\\d+\\w*\\d*", "", linblogs)
+linblogs <- gsub("#\\w+", "", linblogs)
+linblogs <- gsub("[^\x01-\x7F]", "", linblogs)
+linblogs <- gsub("[[:punct:]]", " ", linblogs)
+
+linblogs <- gsub("\n", " ", linblogs)
+linblogs <- gsub("^\\s+", "", linblogs)
+linblogs <- gsub("\\s+$", "", linblogs)
+linblogs <- gsub("[ |\t]+", " ", linblogs)
+
+linblogs <- Corpus(VectorSource(linblogs))
+linblogs <- tm_map(linblogs,removePunctuation)
+linblogs <- tm_map(linblogs,removeWords, stopwords("english"))
+linblogs <- tm_map(linblogs,stripWhitespace)
+
+```
+
+
+```{r corpus3, echo=FALSE}
+linnews <- tolower(linnews)
+linnews <- gsub("@\\w+", "", linnews)
+linnews <- gsub("https?://.+", "", linnews)
+linnews <- gsub("\\d+\\w*\\d*", "", linnews)
+linnews <- gsub("#\\w+", "", linnews)
+linnews <- gsub("[^\x01-\x7F]", "", linnews)
+linnews <- gsub("[[:punct:]]", " ", linnews)
+
+linnews <- gsub("\n", " ", linnews)
+linnews <- gsub("^\\s+", "", linnews)
+linnews <- gsub("\\s+$", "", linnews)
+linnews <- gsub("[ |\t]+", " ", linnews)
+
+linnews <- Corpus(VectorSource(linnews))
+linnews <- tm_map(linnews,removePunctuation)
+linnews <- tm_map(linnews,removeWords, stopwords("english"))
+linnews <- tm_map(linnews,stripWhitespace)
+
+```
+
+
+
+## Exploratory Data Analysis
+
+For each dataset, we plot a bar with the 20 most frequent words. We can observe that some words have a length of 3 characters. In the future, this word could be removed from the corpus.
+
+```{r barblogs, echo = FALSE}
+docs <- Corpus(VectorSource(linblogs))
+dtm <- TermDocumentMatrix(docs) 
+matrix <- as.matrix(dtm) 
+words <- sort(rowSums(matrix),decreasing=TRUE) 
+df <- data.frame(word = names(words),freq=words)
+barplot(df[1:20,]$freq, las = 2, names.arg = df[1:20,]$word,
+        col ="lightblue", main ="20 Most frequent words US Blogs",
+        ylab = "Word frequencies")
+```
+
+```{r barnews, echo = FALSE}
+docs <- Corpus(VectorSource(linnews))
+dtm <- TermDocumentMatrix(docs) 
+matrix <- as.matrix(dtm) 
+words <- sort(rowSums(matrix),decreasing=TRUE) 
+df <- data.frame(word = names(words),freq=words)
+barplot(df[1:20,]$freq, las = 2, names.arg = df[1:20,]$word,
+        col ="lightblue", main ="20 Most frequent words US News",
+        ylab = "Word frequencies")
+```
+
+```{r bartwitter, echo = FALSE}
+docs <- Corpus(VectorSource(lintwitter))
+dtm <- TermDocumentMatrix(docs) 
+matrix <- as.matrix(dtm) 
+words <- sort(rowSums(matrix),decreasing=TRUE) 
+df <- data.frame(word = names(words),freq=words)
+barplot(df[1:20,]$freq, las = 2, names.arg = df[1:20,]$word,
+        col ="lightblue", main ="20 Most frequent words US Twitter",
+        ylab = "Word frequencies")
+```
+
+## Plans for creating the prediction algorithm and the shiny app
+
+We believe that for building a prediction algorithm, some words with a length less than 5 characters should be remove. Besides, several prediction algorithms should be evaluated in order to get the best performance prediction algorithm.
+
+The shiny app should be capable to predict the sentences more used. It will be an single app but with a high performance to predict the sentence.
+
